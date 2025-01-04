@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">WakeOnLAN</string>
+    <string name="start_screen">Wake LAN device</string>
+    <string name="settings_screen">Settings</string>
+    <string name="settings_action">Edit settings</string>
+    <string name="navigate_back">Navigate back</string>
+    <string name="fab_action">Turn ON network device</string>
+    <string name="fab_action_success">Wake up message has been sent.</string>
+    <string name="fab_action_failure">An error occurred while sending the wake up message.</string>
+    <string name="connection_status">Status: %1$s</string>
+    <string name="conn_state_unknown">unknown</string>
+    <string name="conn_state_pending">searching...</string>
+    <string name="conn_state_disconnected">disconnected</string>
+    <string name="conn_state_connected">connected</string>
+    <string name="perm_notif_dialog_title">Notification permission</string>
+    <string name="perm_notif_rationale">This app requires permission to send notifications in order to inform you about specific events.</string>
+    <string name="perm_notif_confirm">Accept</string>
+    <string name="perm_notif_dismiss">Decline</string>
+    <string name="notification_content_title">Network device status</string>
+    <string name="notification_content_text_connected">Network device connected.</string>
+    <string name="notification_content_text_disconnected">Network device disconnected.</string>
+</resources>

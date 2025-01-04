@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">WakeOnLAN</string>
+    <string name="start_screen">Netzwerkgerät einschalten</string>
+    <string name="settings_screen">Einstellungen</string>
+    <string name="settings_action">Einstellungen bearbeiten</string>
+    <string name="navigate_back">Navigiere zurück</string>
+    <string name="fab_action">Netzwerkgerät einschalten</string>
+    <string name="fab_action_success">Einschaltnachricht wurde gesendet.</string>
+    <string name="fab_action_failure">Ein Fehler ist aufgetreten.</string>
+    <string name="connection_status">Status: %1$s</string>
+    <string name="conn_state_unknown">unbekannt</string>
+    <string name="conn_state_pending">suchen...</string>
+    <string name="conn_state_disconnected">getrennt</string>
+    <string name="conn_state_connected">verbunden</string>
+    <string name="perm_notif_dialog_title">Benachrichtigungsberechtigung</string>
+    <string name="perm_notif_rationale">Diese App benötigt die Berechtigung zum Senden von Benachrichtigungen, um über Ereignisse zu informieren.</string>
+    <string name="perm_notif_confirm">Bestätigen</string>
+    <string name="perm_notif_dismiss">Ablehnen</string>
+    <string name="notification_content_title">Netzwerkgeräte-Status</string>
+    <string name="notification_content_text_connected">Netzwerkgerät ist verbunden.</string>
+    <string name="notification_content_text_disconnected">Netzwerkgerät ist nicht verfügbar.</string>
+</resources>
