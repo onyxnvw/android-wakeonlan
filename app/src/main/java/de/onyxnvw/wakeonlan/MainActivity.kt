@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat.getString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -117,8 +118,6 @@ fun WakeOnLanApp(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val snackbarSuccess = stringResource(R.string.fab_action_success)
-    val snackbarFailure = stringResource(R.string.fab_action_failure)
 
     val wifiUiState by viewModel.wifiUiState.collectAsState()
     val networkDeviceUiState by viewModel.networkDeviceUiState.collectAsState()
@@ -135,11 +134,7 @@ fun WakeOnLanApp(
             when (event) {
                 is UiEvent.WakeUpNetworkDeviceResult -> {
                     coroutineScope.launch {
-                        if (event.success) {
-                            snackbarHostState.showSnackbar(snackbarSuccess)
-                        } else {
-                            snackbarHostState.showSnackbar(snackbarFailure)
-                        }
+                        snackbarHostState.showSnackbar(getString(context, event.result.desc))
                     }
                 }
 

@@ -5,8 +5,10 @@
     <string name="settings_action">Edit settings</string>
     <string name="navigate_back">Navigate back</string>
     <string name="fab_action">Turn ON network device</string>
-    <string name="fab_action_success">Wake up message has been sent.</string>
-    <string name="fab_action_failure">An error occurred while sending the wake up message.</string>
+    <string name="wake_up_success">Wake up message has been sent.</string>
+    <string name="wake_up_failure">An error occurred while sending the wake up message.</string>
+    <string name="wake_up_wifi_disconnected">Cannot wake up, WiFi is disconnected.</string>
+    <string name="wake_up_subnet_mismatch">Cannot wake up, subnet mismatch.</string>
     <string name="connection_status">Status: %1$s</string>
     <string name="conn_state_unknown">unknown</string>
     <string name="conn_state_pending">searching...</string>

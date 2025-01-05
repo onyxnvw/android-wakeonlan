@@ -8,17 +8,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.BackoffPolicy
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ListenableWorker.Result
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import de.onyxnvw.wakeonlan.data.ConnectionState
 import de.onyxnvw.wakeonlan.data.NetworkDeviceUiState
+import de.onyxnvw.wakeonlan.data.WakeUpResult
 import de.onyxnvw.wakeonlan.data.WifiUiState
 import de.onyxnvw.wakeonlan.ui.events.UiEvent
 import de.onyxnvw.wakeonlan.utils.NetworkHelpers
 import de.onyxnvw.wakeonlan.utils.NetworkUtility
 import de.onyxnvw.wakeonlan.utils.sendWakeUpMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,6 +32,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.InetAddress
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class AppViewModel(context: Context) : ViewModel() {
@@ -74,10 +81,12 @@ class AppViewModel(context: Context) : ViewModel() {
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent: SharedFlow<UiEvent> = _uiEvent.asSharedFlow()
 
+    private var _workUuid: UUID? = null
+
     init {
         Log.d(TAG, "AppViewModel init")
         monitorWifiConnectivity()
-        monitorNetDeviceConnectivity()
+        monitorNetworkDeviceConnectivity()
     }
 
     private fun monitorWifiConnectivity() {
@@ -121,7 +130,7 @@ class AppViewModel(context: Context) : ViewModel() {
         }
     }
 
-    private fun monitorNetDeviceConnectivity() {
+    private fun monitorNetworkDeviceConnectivity() {
         viewModelScope.launch {
             Log.d(TAG, "monitorNetDeviceConnectivity launched")
             workManager.getWorkInfosByTagLiveData("networkDeviceConnectivity").asFlow()
@@ -131,26 +140,29 @@ class AppViewModel(context: Context) : ViewModel() {
                     for (workInfo in workInfos) {
                         Log.d(TAG, "monitorNetDeviceConnectivity workInfo iteration")
                         if (workInfo.state.isFinished) {
-                            when (workInfo.state) {
-                                WorkInfo.State.SUCCEEDED -> {
-                                    Log.d(TAG, "monitorNetDeviceConnectivity succeeded")
-                                    connectionState = ConnectionState.CONNECTED
-                                    if (!_isInForeground.value) {
-                                        _uiEvent.emit(UiEvent.NetworkDeviceStatus(true))
+                            if ((_workUuid != null) && (workInfo.id == _workUuid)) {
+                                when (workInfo.state) {
+                                    WorkInfo.State.SUCCEEDED -> {
+                                        Log.d(TAG, "monitorNetDeviceConnectivity succeeded")
+                                        connectionState = ConnectionState.CONNECTED
+                                        if (!_isInForeground.value) {
+                                            _uiEvent.emit(UiEvent.NetworkDeviceStatus(true))
+                                        }
+                                    }
+
+                                    WorkInfo.State.FAILED -> {
+                                        Log.d(TAG, "monitorNetDeviceConnectivity failed")
+                                        connectionState = ConnectionState.DISCONNECTED
+                                        if (!_isInForeground.value) {
+                                            _uiEvent.emit(UiEvent.NetworkDeviceStatus(false))
+                                        }
+                                    }
+
+                                    else -> {
+                                        Log.d(TAG, "monitorNetDeviceConnectivity unknown")
                                     }
                                 }
 
-                                WorkInfo.State.FAILED -> {
-                                    Log.d(TAG, "monitorNetDeviceConnectivity failed")
-                                    connectionState = ConnectionState.DISCONNECTED
-                                    if (!_isInForeground.value) {
-                                        _uiEvent.emit(UiEvent.NetworkDeviceStatus(false))
-                                    }
-                                }
-
-                                else -> {
-                                    Log.d(TAG, "monitorNetDeviceConnectivity unknown")
-                                }
                             }
                         } else {
                             connectionState = ConnectionState.PENDING
@@ -171,7 +183,7 @@ class AppViewModel(context: Context) : ViewModel() {
         _isInForeground.value = isForeground
     }
 
-    fun checkNetworkDeviceConnectivity(totalAttempts: Int = 1) {
+    fun checkNetworkDeviceConnectivity() {
         Log.d(TAG, "checkNetworkDeviceConnectivity entry")
         if (_wifiUiState.value.connectionState == ConnectionState.CONNECTED) {
             if (NetworkHelpers.areInSameSubnet(
@@ -180,23 +192,42 @@ class AppViewModel(context: Context) : ViewModel() {
                     HOME_NETWORK_MASK
                 )
             ) {
-                val inputData = Data.Builder()
-                    .putString("host", NAS_IP4_ADDRESS)
-                    .putInt("attempts", totalAttempts)
-                    .build()
-                val workRequest: OneTimeWorkRequest =
-                    OneTimeWorkRequestBuilder<NetDeviceCheckWorker>()
-                        .addTag("networkDeviceConnectivity")
-                        .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
-                        .setInputData(inputData)
-                        .build()
+                // set state to pending before doing the network connectivity check
+                _networkDeviceUiState.update { currentState ->
+                    currentState.copy(
+                        connectionState = ConnectionState.PENDING,
+                        address = currentState.address,
+                        macAddress = currentState.macAddress
+                    )
+                }
 
-                Log.d(TAG, "checkNetworkDeviceConnectivity enqueue workRequest")
-                workManager.enqueueUniqueWork(
-                    "networkDeviceConnectivity",
-                    ExistingWorkPolicy.REPLACE,
-                    workRequest
-                )
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val inetAddress = InetAddress.getByName(_networkDeviceUiState.value.address)
+                        val connectionState = if (inetAddress.isReachable(500)) {
+                            ConnectionState.CONNECTED
+                        } else {
+                            ConnectionState.DISCONNECTED
+                        }
+
+                        _networkDeviceUiState.update { currentState ->
+                            currentState.copy(
+                                connectionState = connectionState,
+                                address = currentState.address,
+                                macAddress = currentState.macAddress
+                            )
+                        }
+                    } catch (e: IOException) {
+                        Log.d(TAG, "checkNetworkDeviceConnectivity IO exception")
+                        _networkDeviceUiState.update { currentState ->
+                            currentState.copy(
+                                connectionState = ConnectionState.UNKNOWN,
+                                address = currentState.address,
+                                macAddress = currentState.macAddress
+                            )
+                        }
+                    }
+                }
             }
         }
         Log.d(TAG, "checkNetworkDeviceConnectivity exit")
@@ -204,21 +235,58 @@ class AppViewModel(context: Context) : ViewModel() {
 
     fun wakeUpNetworkDevice() {
         viewModelScope.launch {
-            val result = sendWakeUpMessage(
-                _networkDeviceUiState.value.macAddress,
-                _wifiUiState.value.broadcastAddress
-            )
-            result.fold(
-                onSuccess = {
-                    Log.d(TAG, "wakeUpNetworkDevice success")
-                    _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(true))
-                    checkNetworkDeviceConnectivity(5)
-                },
-                onFailure = {
-                    Log.d(TAG, "wakeUpNetworkDevice failure")
-                    _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(false))
+            if (_wifiUiState.value.connectionState == ConnectionState.CONNECTED) {
+                if (NetworkHelpers.areInSameSubnet(
+                        _wifiUiState.value.address,
+                        _networkDeviceUiState.value.address,
+                        HOME_NETWORK_MASK
+                    )
+                ) {
+                    val result = sendWakeUpMessage(
+                        _networkDeviceUiState.value.macAddress,
+                        _wifiUiState.value.broadcastAddress
+                    )
+                    result.fold(
+                        onSuccess = {
+                            Log.d(TAG, "wakeUpNetworkDevice success")
+                            // update UI about sent wake up message
+                            _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.SUCCESS))
+
+                            // start background worker to wait for network device to get
+                            // available
+                            val workUuid = UUID.randomUUID()
+                            val inputData = Data.Builder()
+                                .putString("host", _networkDeviceUiState.value.address)
+                                .putInt("attempts", 5)
+                                .build()
+                            val workRequest = OneTimeWorkRequestBuilder<NetDeviceCheckWorker>()
+                                .addTag("networkDeviceConnectivity")
+                                .setId(workUuid)
+                                .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
+                                .setInputData(inputData)
+                                .build()
+
+                            Log.d(TAG, "wakeUpNetworkDevice enqueue workRequest")
+                            workManager.enqueueUniqueWork(
+                                "networkDeviceConnectivity",
+                                ExistingWorkPolicy.REPLACE,
+                                workRequest
+                            )
+                            _workUuid = workUuid
+                        },
+                        onFailure = {
+                            Log.d(TAG, "wakeUpNetworkDevice failure")
+                            _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.FAILURE))
+                        }
+                    )
+                } else {
+                    Log.d(TAG, "wakeUpNetworkDevice not in same subnet")
+                    _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.SUBNET_MISMATCH))
                 }
-            )
+            } else {
+                Log.d(TAG, "wakeUpNetworkDevice not connected")
+                _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.WIFI_DISCONNECTED))
+            }
         }
     }
 }

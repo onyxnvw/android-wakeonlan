@@ -5,8 +5,10 @@
     <string name="settings_action">Einstellungen bearbeiten</string>
     <string name="navigate_back">Navigiere zurück</string>
     <string name="fab_action">Netzwerkgerät einschalten</string>
-    <string name="fab_action_success">Einschaltnachricht wurde gesendet.</string>
-    <string name="fab_action_failure">Ein Fehler ist aufgetreten.</string>
+    <string name="wake_up_success">Einschaltnachricht wurde gesendet.</string>
+    <string name="wake_up_failure">Ein Fehler ist aufgetreten.</string>
+    <string name="wake_up_wifi_disconnected">WLAN ist nicht verbunden.</string>
+    <string name="wake_up_subnet_mismatch">Falsches Netzwerk.</string>
     <string name="connection_status">Status: %1$s</string>
     <string name="conn_state_unknown">unbekannt</string>
     <string name="conn_state_pending">suchen...</string>
