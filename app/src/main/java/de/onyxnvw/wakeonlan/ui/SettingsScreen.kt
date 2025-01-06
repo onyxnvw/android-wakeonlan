@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,56 +30,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import de.onyxnvw.wakeonlan.AppViewModel
 import de.onyxnvw.wakeonlan.R
-import de.onyxnvw.wakeonlan.ui.theme.WakeOnLanTheme
+import de.onyxnvw.wakeonlan.data.PreferenceSetting
 import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(/*viewModel: AppViewModel*/ appVersion: String) {
+fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
 
-    var ipAddress by remember { mutableStateOf("192.168.1.2")}
+    val settings by viewModel.settings.collectAsState()
+    var selectedSetting by remember { mutableStateOf<PreferenceSetting?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        Setting(
-            key = "IP-Adresse",
-            value = ipAddress,
-            icon = painterResource(R.drawable.devices_other_24px),
-            isEditable = true,
-            onEdit = { showBottomSheet = true })
-        Spacer(modifier = Modifier.height(4.dp))
-        HorizontalDivider(color = Color.Gray, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(4.dp))
-        Setting(
-            key = "Netzmaske",
-            value = "255.255.255.0",
-            icon = painterResource(R.drawable.devices_other_24px),
-            isEditable = true,
-            onEdit = { showBottomSheet = true })
-        Spacer(modifier = Modifier.height(4.dp))
-        HorizontalDivider(color = Color.Gray, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(4.dp))
-        Setting(
-            key = "MAC Adresse",
-            value = "11:22:33:44:55:66",
-            icon = painterResource(R.drawable.storage_24px),
-            isEditable = true,
-            onEdit = { showBottomSheet = true })
-        Spacer(modifier = Modifier.height(4.dp))
-        HorizontalDivider(color = Color.Gray, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(4.dp))
+        settings.forEach { setting ->
+            Setting(
+                label = setting.name,
+                value = setting.value,
+                icon = painterResource(R.drawable.devices_other_24px),
+                isEditable = true,
+                onEdit = {
+                    selectedSetting = setting
+                    showBottomSheet = true
+                })
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(color = Color.Gray, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(4.dp))
+        }
         /** version information */
         Setting(
-            key = "App version",
+            label = "App version",
             value = appVersion,
             icon = painterResource(R.drawable.info_24px),
             isEditable = false,
@@ -86,51 +77,59 @@ fun SettingsScreen(/*viewModel: AppViewModel*/ appVersion: String) {
     }
 
     if (showBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showBottomSheet = false
-            },
-            sheetState = sheetState,
-        ) {
-            var text by remember { mutableStateOf(ipAddress) }
-
-            TextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Gib einen neuen Wert ein") },
-                modifier = Modifier
-                    .padding(horizontal = 32.dp, vertical = 8.dp)
-                    .fillMaxWidth()
-            )
-            Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier
-                    .padding(horizontal = 32.dp, vertical = 16.dp)
-                    .fillMaxWidth()
+        if (selectedSetting != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showBottomSheet = false
+                },
+                sheetState = sheetState,
             ) {
-                Text("Abbrechen", modifier = Modifier.clickable {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showBottomSheet = false
-                        }
-                    }
-                })
-                Spacer(modifier = Modifier.width(32.dp))
-                Text("Speichern", modifier = Modifier.clickable {
-                    ipAddress = text
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showBottomSheet = false
-                        }
-                    }
-                })
+                var text by remember { mutableStateOf(selectedSetting!!.value) }
+
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(id = R.string.prefs_edit_action_title)) },
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                        .fillMaxWidth()
+                )
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp, vertical = 16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        stringResource(id = R.string.prefs_edit_action_dismiss),
+                        modifier = Modifier.clickable {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = false
+                                }
+                            }
+                        })
+                    Spacer(modifier = Modifier.width(32.dp))
+                    Text(
+                        stringResource(id = R.string.prefs_edit_action_confirm),
+                        modifier = Modifier.clickable {
+                            viewModel.updateSetting(selectedSetting!!.key, text)
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = false
+                                }
+                            }
+                        })
+                }
             }
         }
     }
+
+
 }
 
 @Composable
-fun Setting(key: String, value: String, icon: Painter, isEditable: Boolean, onEdit: () -> Unit) {
+fun Setting(label: String, value: String, icon: Painter, isEditable: Boolean, onEdit: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -139,7 +138,7 @@ fun Setting(key: String, value: String, icon: Painter, isEditable: Boolean, onEd
     ) {
         Icon(
             painter = icon,
-            contentDescription = key,
+            contentDescription = label,
             modifier = Modifier
                 .fillMaxHeight()
                 .width(64.dp)
@@ -153,7 +152,7 @@ fun Setting(key: String, value: String, icon: Painter, isEditable: Boolean, onEd
                 .weight(1.0f)
         ) {
             Text(
-                text = key,
+                text = label,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize
             )
             Text(
@@ -176,14 +175,13 @@ fun Setting(key: String, value: String, icon: Painter, isEditable: Boolean, onEd
 }
 
 
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-fun SettingsPreview() {
-    WakeOnLanTheme {
-        SettingsScreen(appVersion = "1.0")
-    }
-}
-
+//@Preview(
+//    showBackground = true,
+//    showSystemUi = true
+//)
+//@Composable
+//fun SettingsPreview() {
+//    WakeOnLanTheme {
+//        SettingsScreen(appVersion = "1.0")
+//    }
+//}

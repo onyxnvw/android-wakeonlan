@@ -21,4 +21,12 @@
     <string name="notification_content_title">Network device status</string>
     <string name="notification_content_text_connected">Network device connected.</string>
     <string name="notification_content_text_disconnected">Network device disconnected.</string>
+    <string name="prefs_network_device_ip_address">IP address</string>
+    <string name="prefs_network_device_mac_address">MAC address</string>
+    <string name="prefs_network_subnet_mask">Subnet mask</string>
+    <string name="prefs_edit_action_title">Provide a new value:</string>
+    <string name="prefs_edit_action_confirm">Apply</string>
+    <string name="prefs_edit_action_dismiss">Dismiss</string>
+    <string name="prefs_app_version">App version</string>
+    <string name="default_ip_address">192.168.1.2</string>
 </resources>

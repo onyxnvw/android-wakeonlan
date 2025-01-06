@@ -41,6 +41,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat.getString
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -219,7 +220,7 @@ fun WakeOnLanApp(
             }
 
             composable(route = WakeOnLanScreens.Settings.name) {
-                SettingsScreen(appVersion = appVersion)
+                SettingsScreen(viewModel = viewModel, appVersion = appVersion)
             }
         }
     }

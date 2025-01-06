@@ -66,6 +66,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.7.6")
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 

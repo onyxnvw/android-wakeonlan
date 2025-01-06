@@ -21,4 +21,12 @@
     <string name="notification_content_title">Netzwerkgeräte-Status</string>
     <string name="notification_content_text_connected">Netzwerkgerät ist verbunden.</string>
     <string name="notification_content_text_disconnected">Netzwerkgerät ist nicht verfügbar.</string>
+    <string name="prefs_network_device_ip_address">IP-Adresse</string>
+    <string name="prefs_network_device_mac_address">MAC Adresse</string>
+    <string name="prefs_network_subnet_mask">Subnetz-Maske</string>
+    <string name="prefs_edit_action_title">Gib einen neuen Wert ein:</string>
+    <string name="prefs_edit_action_confirm">Speichern</string>
+    <string name="prefs_edit_action_dismiss">Abbrechen</string>
+    <string name="prefs_app_version">App Version</string>
+    <string name="default_ip_address">192.168.1.2</string>
 </resources>
