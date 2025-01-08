@@ -9,6 +9,9 @@
     <string name="wake_up_failure">Ein Fehler ist aufgetreten.</string>
     <string name="wake_up_wifi_disconnected">WLAN ist nicht verbunden.</string>
     <string name="wake_up_subnet_mismatch">Falsches Netzwerk.</string>
+    <string name="connection_ip_address">Netzwerkadresse: %1$s</string>
+    <string name="connection_broadcast_address">Broadcast-Adresse: %1$s</string>
+    <string name="connection_mac_address">Geräteadresse: %1$s</string>
     <string name="connection_status">Status: %1$s</string>
     <string name="conn_state_unknown">unbekannt</string>
     <string name="conn_state_pending">suchen...</string>

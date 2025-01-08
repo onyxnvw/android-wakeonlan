@@ -45,12 +45,6 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class AppViewModel(context: Context) : ViewModel() {
-    companion object {
-        const val HOME_NETWORK_MASK = "255.255.255.0"
-        const val NAS_IP4_ADDRESS = "192.168.2.150" // "10.0.2.22" //
-        const val NAS_MAC_ADDRESS = "00:11:32:C2:2F:ED"
-    }
-
     private val networkUtility = NetworkUtility(context)
     private val workManager = WorkManager.getInstance(context)
 
@@ -69,6 +63,7 @@ class AppViewModel(context: Context) : ViewModel() {
         )
     )
     val wifiUiState: StateFlow<WifiUiState> = _wifiUiState.asStateFlow()
+    private var _wifiSubnetMask = "0.0.0.0"
 
     /**
      * Network device state
@@ -76,8 +71,8 @@ class AppViewModel(context: Context) : ViewModel() {
     private val _networkDeviceUiState = MutableStateFlow(
         NetworkDeviceUiState(
             connectionState = ConnectionState.UNKNOWN,
-            address = NAS_IP4_ADDRESS,
-            macAddress = NAS_MAC_ADDRESS
+            address = "0.0.0.0",
+            macAddress = "00:00:00:00:00:00"
         )
     )
     val networkDeviceUiState: StateFlow<NetworkDeviceUiState> = _networkDeviceUiState.asStateFlow()
@@ -102,20 +97,17 @@ class AppViewModel(context: Context) : ViewModel() {
             PreferenceSetting(
                 stringPreferencesKey("network_device_ip_address"),
                 context.getString(R.string.prefs_network_device_ip_address),
-                "0.0.0.0",
-                "192.168.1.2"
+                "0.0.0.0"
             ),
             PreferenceSetting(
                 stringPreferencesKey("network_device_mac_address"),
                 context.getString(R.string.prefs_network_device_mac_address),
-                "00:00:00:00:00:00",
-                "00:11:22:33:44:55"
+                "00:00:00:00:00:00"
             ),
             PreferenceSetting(
                 stringPreferencesKey("network_subnet_mask"),
                 context.getString(R.string.prefs_network_subnet_mask),
-                "0.0.0.0",
-                "255.255.255.0"
+                "0.0.0.0"
             )
         )
     )
@@ -124,9 +116,64 @@ class AppViewModel(context: Context) : ViewModel() {
     init {
         Log.d(TAG, "AppViewModel init")
 
+        handlePreferences()
         monitorWifiConnectivity()
         monitorNetworkDeviceConnectivity()
-        handlePreferences()
+    }
+
+    private fun handlePreferences() {
+        viewModelScope.launch {
+            // handle dataStore flow
+            launch {
+                dataStore.data.collect { preferences ->
+                    preferences.asMap().forEach { entry ->
+                        val key = entry.key.name
+                        val value = entry.value.toString()
+                        _settings.value = _settings.value.map { setting ->
+                            if (setting.key.name == key) {
+                                setting.copy(value = value)
+                            } else {
+                                setting
+                            }
+                        }
+                    }
+                }
+            }
+            // handle settings flow
+            launch {
+                // update internal status based on changed settings
+                _settings.collect { settings ->
+                    settings.forEach { setting ->
+                        when (setting.key.name) {
+                            "network_device_ip_address" -> {
+                                _networkDeviceUiState.update { currentState ->
+                                    currentState.copy(address = setting.value)
+                                }
+                            }
+
+                            "network_device_mac_address" -> {
+                                _networkDeviceUiState.update { currentState ->
+                                    currentState.copy(macAddress = setting.value)
+                                }
+                            }
+
+                            "network_subnet_mask" -> {
+                                _wifiSubnetMask = setting.value
+                                _wifiUiState.update { currentState ->
+                                    currentState.copy(
+                                        broadcastAddress = NetworkHelpers.getBroadcastAddress(
+                                            currentState.address,
+                                            setting.value
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    checkNetworkDeviceConnectivity()
+                }
+            }
+        }
     }
 
     private fun monitorWifiConnectivity() {
@@ -142,7 +189,7 @@ class AppViewModel(context: Context) : ViewModel() {
                         address = status.ipv4Address,
                         broadcastAddress = NetworkHelpers.getBroadcastAddress(
                             status.ipv4Address,
-                            HOME_NETWORK_MASK
+                            _wifiSubnetMask
                         )
                     )
                 }
@@ -219,20 +266,6 @@ class AppViewModel(context: Context) : ViewModel() {
         }
     }
 
-    private fun handlePreferences() {
-        viewModelScope.launch {
-            for (preferenceSetting in _settings.value) {
-                dataStore.data
-                    .map { preferences ->
-                        preferences[preferenceSetting.key] ?: preferenceSetting.default
-                    }
-                    .collect {
-                        preferenceSetting.value = it
-                    }
-            }
-        }
-    }
-
     fun updateActivityState(isForeground: Boolean) {
         _isInForeground.value = isForeground
     }
@@ -243,7 +276,7 @@ class AppViewModel(context: Context) : ViewModel() {
             if (NetworkHelpers.areInSameSubnet(
                     _wifiUiState.value.address,
                     _networkDeviceUiState.value.address,
-                    HOME_NETWORK_MASK
+                    _wifiSubnetMask
                 )
             ) {
                 // set state to pending before doing the network connectivity check
@@ -257,7 +290,8 @@ class AppViewModel(context: Context) : ViewModel() {
 
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val inetAddress = InetAddress.getByName(_networkDeviceUiState.value.address)
+                        val inetAddress =
+                            InetAddress.getByName(_networkDeviceUiState.value.address)
                         val connectionState = if (inetAddress.isReachable(500)) {
                             ConnectionState.CONNECTED
                         } else {
@@ -293,7 +327,7 @@ class AppViewModel(context: Context) : ViewModel() {
                 if (NetworkHelpers.areInSameSubnet(
                         _wifiUiState.value.address,
                         _networkDeviceUiState.value.address,
-                        HOME_NETWORK_MASK
+                        _wifiSubnetMask
                     )
                 ) {
                     val result = sendWakeUpMessage(

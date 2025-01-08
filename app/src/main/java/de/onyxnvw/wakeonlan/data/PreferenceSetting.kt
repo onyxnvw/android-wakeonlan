@@ -5,6 +5,5 @@ import androidx.datastore.preferences.core.Preferences
 data class PreferenceSetting(
     val key: Preferences.Key<String>,
     val name: String,
-    var value: String,
-    val default: String
+    var value: String
 )

@@ -18,9 +18,11 @@ import de.onyxnvw.wakeonlan.data.NetworkDeviceUiState
 fun StorageStatusCard(netDeviceUiState: NetworkDeviceUiState, refresh: () -> Unit) {
     val painter: Painter
     val color: Color
-    val info: MutableList<String> = mutableListOf()
-
-    info += stringResource(R.string.connection_status, stringResource(id = netDeviceUiState.connectionState.desc))
+    val info: List<String> = listOf(
+        stringResource(R.string.connection_ip_address, netDeviceUiState.address),
+        stringResource(R.string.connection_mac_address, netDeviceUiState.macAddress),
+        stringResource(R.string.connection_status, stringResource(id = netDeviceUiState.connectionState.desc))
+    )
 
     when (netDeviceUiState.connectionState) {
         ConnectionState.UNKNOWN -> {
@@ -41,8 +43,6 @@ fun StorageStatusCard(netDeviceUiState: NetworkDeviceUiState, refresh: () -> Uni
         ConnectionState.CONNECTED -> {
             painter = painterResource(R.drawable.cloud_done_48px)
             color = Color.Green
-            info += "IP: " + netDeviceUiState.address
-            info += "MAC: " + netDeviceUiState.macAddress
         }
     }
     val modifier: Modifier = Modifier

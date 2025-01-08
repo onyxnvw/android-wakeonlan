@@ -5,16 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -28,7 +26,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -54,26 +51,42 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
             .padding(8.dp)
     ) {
         settings.forEach { setting ->
-            Setting(
-                label = setting.name,
-                value = setting.value,
-                icon = painterResource(R.drawable.devices_other_24px),
-                isEditable = true,
-                onEdit = {
-                    selectedSetting = setting
-                    showBottomSheet = true
-                })
-            Spacer(modifier = Modifier.height(4.dp))
+            ListItem(
+                headlineContent = { Text(setting.name) },
+                supportingContent = { Text(setting.value) },
+                trailingContent = {
+                    Icon(
+                        painter = painterResource(R.drawable.edit_24px),
+                        contentDescription = "Edit",
+                        modifier = Modifier
+                            .clickable {
+                                selectedSetting = setting
+                                showBottomSheet = true
+                            }
+                            .padding(16.dp)
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
             HorizontalDivider(color = Color.Gray, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(4.dp))
         }
         /** version information */
-        Setting(
-            label = "App version",
-            value = appVersion,
-            icon = painterResource(R.drawable.info_24px),
-            isEditable = false,
-            onEdit = {})
+        ListItem(
+            headlineContent = { Text(stringResource(id = R.string.prefs_app_version)) },
+            supportingContent = { Text(appVersion) },
+            trailingContent = {
+                Icon(
+                    painter = painterResource(R.drawable.info_24px),
+                    contentDescription = "Edit",
+                    modifier = Modifier
+                        .width(64.dp)
+                        .padding(16.dp)
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
     }
 
     if (showBottomSheet) {
@@ -127,53 +140,6 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
 
 
 }
-
-@Composable
-fun Setting(label: String, value: String, icon: Painter, isEditable: Boolean, onEdit: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .then(if (isEditable) Modifier.clickable { onEdit() } else Modifier)
-    ) {
-        Icon(
-            painter = icon,
-            contentDescription = label,
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(64.dp)
-                .padding(12.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1.0f)
-        ) {
-            Text(
-                text = label,
-                fontSize = MaterialTheme.typography.headlineSmall.fontSize
-            )
-            Text(
-                text = value,
-                fontSize = MaterialTheme.typography.bodySmall.fontSize
-            )
-        }
-//        if (isEditable) {
-//            Icon(
-//                painter = painterResource(R.drawable.edit_24px),
-//                contentDescription = "Edit",
-//                modifier = Modifier
-//                    .fillMaxHeight()
-//                    .width(64.dp)
-//                    .clickable { onEdit() }
-//                    .padding(16.dp)
-//            )
-//        }
-    }
-}
-
 
 //@Preview(
 //    showBackground = true,

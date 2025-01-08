@@ -24,13 +24,11 @@ fun WifiStatusCard(wifiUiState: WifiUiState) {
         painterResource(id = R.drawable.wifi_off_48px)
     }
     val color: Color = colorResource(id = wifiUiState.connectionState.color)
-    val info: MutableList<String> = mutableListOf()
-
-    info += stringResource(R.string.connection_status, stringResource(id = wifiUiState.connectionState.desc))
-
-    if (wifiUiState.connectionState == ConnectionState.CONNECTED) {
-        info += "IP: ${wifiUiState.address}"
-    }
+    val info: List<String> = listOf(
+        stringResource(R.string.connection_ip_address, wifiUiState.address),
+        stringResource(R.string.connection_broadcast_address, wifiUiState.broadcastAddress),
+        stringResource(R.string.connection_status, stringResource(id = wifiUiState.connectionState.desc))
+    )
 
     val modifier: Modifier = Modifier
         .fillMaxWidth()
