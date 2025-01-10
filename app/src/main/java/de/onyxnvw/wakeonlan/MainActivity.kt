@@ -1,7 +1,9 @@
 package de.onyxnvw.wakeonlan
 
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -41,7 +43,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat.getString
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -78,11 +79,6 @@ class MainActivity : ComponentActivity() {
             packageName,
             PackageManager.PackageInfoFlags.of(0)
         )
-//        val lifecycleObserver = AppLifecycleObserver(
-//            onForeground = { appViewModel.updateActivityState(true) },
-//            onBackground = { appViewModel.updateActivityState(false) }
-//        )
-//        lifecycle.addObserver(lifecycleObserver)
 
         setContent {
             WakeOnLanTheme {
@@ -152,11 +148,7 @@ fun WakeOnLanApp(
 
                 is UiEvent.NetworkDeviceStatus -> {
                     coroutineScope.launch {
-                        if (event.isAvailable) {
-                            sendDeviceAvailableNotification(context)
-                        } else {
-                            sendDeviceUnavailableNotification(context)
-                        }
+                        sendNetworkDeviceStatusNotification(context, event.isAvailable)
                     }
                 }
             }
@@ -237,13 +229,29 @@ fun WakeOnLanApp(
     }
 }
 
-fun sendDeviceAvailableNotification(context: Context) {
+fun sendNetworkDeviceStatusNotification(context: Context, isAvailable: Boolean) {
+    val contentText = if (isAvailable) {
+        context.getString(R.string.notification_content_text_connected)
+    } else {
+        context.getString(R.string.notification_content_text_disconnected)
+    }
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    val pendingIntent: PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
     val notification =
         NotificationCompat.Builder(context, "de.onyxnvw.wakeonlan.status_notification_channel_id")
             .setContentTitle(context.getString(R.string.notification_content_title))
-            .setContentText(context.getString(R.string.notification_content_text_connected))
+            .setContentText(contentText)
             .setSmallIcon(R.drawable.power_settings_new_48px)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true) // remove notification when clicked
             .build()
 
     with(NotificationManagerCompat.from(context)) {
@@ -264,35 +272,6 @@ fun sendDeviceAvailableNotification(context: Context) {
         notify(1, notification)
     }
 }
-
-fun sendDeviceUnavailableNotification(context: Context) {
-    val notification =
-        NotificationCompat.Builder(context, "de.onyxnvw.wakeonlan.status_notification_channel_id")
-            .setContentTitle(context.getString(R.string.notification_content_title))
-            .setContentText(context.getString(R.string.notification_content_text_disconnected))
-            .setSmallIcon(R.drawable.power_settings_new_48px)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-    with(NotificationManagerCompat.from(context)) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        }
-        notify(2, notification)
-    }
-}
-
 
 //@Preview(
 //    showBackground = true,

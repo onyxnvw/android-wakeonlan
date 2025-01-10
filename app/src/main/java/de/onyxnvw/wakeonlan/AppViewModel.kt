@@ -262,44 +262,50 @@ class AppViewModel(context: Context) : ViewModel() {
     }
 
     fun checkNetworkDeviceConnectivity() {
-        Log.d(TAG, "checkNetworkDeviceConnectivity entry")
-        _networkDeviceUiState.update { currentState ->
-            currentState.copy(connectionState = ConnectionState.UNKNOWN)
-        }
+        viewModelScope.launch {
+            Log.d(TAG, "checkNetworkDeviceConnectivity entry")
+            _networkDeviceUiState.update { currentState ->
+                currentState.copy(connectionState = ConnectionState.UNKNOWN)
+            }
 
-        if (_wifiUiState.value.connectionState == ConnectionState.CONNECTED) {
-            if (NetworkHelpers.areInSameSubnet(
-                    _wifiUiState.value.address,
-                    _networkDeviceUiState.value.address,
-                    _wifiSubnetMask
-                )
-            ) {
-                // set state to pending before doing the network connectivity check
-                _networkDeviceUiState.update { currentState ->
-                    currentState.copy(connectionState = ConnectionState.PENDING)
-                }
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val inetAddress = InetAddress.getByName(_networkDeviceUiState.value.address)
-                        val connectionState = if (inetAddress.isReachable(500)) {
-                            ConnectionState.CONNECTED
-                        } else {
-                            ConnectionState.DISCONNECTED
-                        }
-                        _networkDeviceUiState.update { currentState ->
-                            currentState.copy(connectionState = connectionState)
-                        }
-                    } catch (e: IOException) {
-                        Log.d(TAG, "checkNetworkDeviceConnectivity IO exception")
-                        _networkDeviceUiState.update { currentState ->
-                            currentState.copy(connectionState = ConnectionState.UNKNOWN)
-                        }
+            if (_wifiUiState.value.connectionState == ConnectionState.CONNECTED) {
+                if (NetworkHelpers.areInSameSubnet(
+                        _wifiUiState.value.address,
+                        _networkDeviceUiState.value.address,
+                        _wifiSubnetMask
+                    )
+                ) {
+                    // set state to pending before doing the network connectivity check
+                    _networkDeviceUiState.update { currentState ->
+                        currentState.copy(connectionState = ConnectionState.PENDING)
                     }
+
+                    val result =
+                        NetworkHelpers.isDeviceAvailable(_networkDeviceUiState.value.address)
+                    result.fold(
+                        onSuccess = { isAvailable ->
+                            Log.d(TAG, "checkNetworkDeviceConnectivity success")
+                            _networkDeviceUiState.update { currentState ->
+                                currentState.copy(
+                                    connectionState = if (isAvailable) {
+                                        ConnectionState.CONNECTED
+                                    } else {
+                                        ConnectionState.DISCONNECTED
+                                    }
+                                )
+                            }
+                        },
+                        onFailure = {
+                            Log.d(TAG, "checkNetworkDeviceConnectivity failure")
+                            _networkDeviceUiState.update { currentState ->
+                                currentState.copy(connectionState = ConnectionState.UNKNOWN)
+                            }
+                        }
+                    )
                 }
             }
+            Log.d(TAG, "checkNetworkDeviceConnectivity exit")
         }
-        Log.d(TAG, "checkNetworkDeviceConnectivity exit")
     }
 
     fun wakeUpNetworkDevice() {
@@ -311,42 +317,57 @@ class AppViewModel(context: Context) : ViewModel() {
                         _wifiSubnetMask
                     )
                 ) {
-                    val result = sendWakeUpMessage(
+                    // send wake up message in any case
+                    val wakeupResult = sendWakeUpMessage(
                         _networkDeviceUiState.value.macAddress,
                         _wifiUiState.value.broadcastAddress
                     )
-                    result.fold(
+                    wakeupResult.fold(
                         onSuccess = {
                             Log.d(TAG, "wakeUpNetworkDevice success")
-                            // update UI about sent wake up message
                             _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.SUCCESS))
-
-                            // start background worker to wait for network device to get
-                            // available
-                            val workUuid = UUID.randomUUID()
-                            val inputData = Data.Builder()
-                                .putString("host", _networkDeviceUiState.value.address)
-                                .putInt("attempts", 5)
-                                .build()
-                            val workRequest = OneTimeWorkRequestBuilder<NetDeviceCheckWorker>()
-                                .addTag("networkDeviceConnectivity")
-                                .setId(workUuid)
-                                .setInitialDelay(30, TimeUnit.SECONDS)
-                                .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
-                                .setInputData(inputData)
-                                .build()
-
-                            Log.d(TAG, "wakeUpNetworkDevice enqueue workRequest")
-                            workManager.enqueueUniqueWork(
-                                "networkDeviceConnectivity",
-                                ExistingWorkPolicy.REPLACE,
-                                workRequest
-                            )
-                            _workUuid = workUuid
                         },
                         onFailure = {
                             Log.d(TAG, "wakeUpNetworkDevice failure")
                             _uiEvent.emit(UiEvent.WakeUpNetworkDeviceResult(WakeUpResult.FAILURE))
+                        }
+                    )
+
+                    // check availability once
+                    val connectivityResult =
+                        NetworkHelpers.isDeviceAvailable(_networkDeviceUiState.value.address)
+                    connectivityResult.fold(
+                        onSuccess = { isAvailable ->
+                            if (!isAvailable) {
+                                // start background worker to wait for network device to get
+                                // available
+                                val workUuid = UUID.randomUUID()
+                                val inputData = Data.Builder()
+                                    .putString("host", _networkDeviceUiState.value.address)
+                                    .putInt("attempts", 5)
+                                    .build()
+                                val workRequest = OneTimeWorkRequestBuilder<NetDeviceCheckWorker>()
+                                    .addTag("networkDeviceConnectivity")
+                                    .setId(workUuid)
+                                    .setInitialDelay(30, TimeUnit.SECONDS)
+                                    .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
+                                    .setInputData(inputData)
+                                    .build()
+
+                                Log.d(TAG, "wakeUpNetworkDevice enqueue workRequest")
+                                workManager.enqueueUniqueWork(
+                                    "networkDeviceConnectivity",
+                                    ExistingWorkPolicy.REPLACE,
+                                    workRequest
+                                )
+                                _workUuid = workUuid
+                            }
+                        },
+                        onFailure = {
+                            Log.d(TAG, "wakeUpNetworkDevice connectivity failure")
+                            _networkDeviceUiState.update { currentState ->
+                                currentState.copy(connectionState = ConnectionState.UNKNOWN)
+                            }
                         }
                     )
                 } else {
