@@ -198,11 +198,7 @@ class AppViewModel(context: Context) : ViewModel() {
                 if (_wifiUiState.value.connectionState == ConnectionState.DISCONNECTED) {
                     Log.d(TAG, "monitorWifiConnectivity Wifi disconnected")
                     _networkDeviceUiState.update { currentState ->
-                        currentState.copy(
-                            connectionState = ConnectionState.UNKNOWN,
-                            address = currentState.address,
-                            macAddress = currentState.macAddress
-                        )
+                        currentState.copy(connectionState = ConnectionState.UNKNOWN)
                     }
                 }
                 /* in case the WiFi network gets connected the NAS connection state shall be
@@ -249,18 +245,13 @@ class AppViewModel(context: Context) : ViewModel() {
                                         Log.d(TAG, "monitorNetDeviceConnectivity unknown")
                                     }
                                 }
-
                             }
                         } else {
                             connectionState = ConnectionState.PENDING
                         }
                     }
                     _networkDeviceUiState.update { currentState ->
-                        currentState.copy(
-                            connectionState = connectionState,
-                            address = currentState.address,
-                            macAddress = currentState.macAddress
-                        )
+                        currentState.copy(connectionState = connectionState)
                     }
                 }
         }
@@ -272,6 +263,10 @@ class AppViewModel(context: Context) : ViewModel() {
 
     fun checkNetworkDeviceConnectivity() {
         Log.d(TAG, "checkNetworkDeviceConnectivity entry")
+        _networkDeviceUiState.update { currentState ->
+            currentState.copy(connectionState = ConnectionState.UNKNOWN)
+        }
+
         if (_wifiUiState.value.connectionState == ConnectionState.CONNECTED) {
             if (NetworkHelpers.areInSameSubnet(
                     _wifiUiState.value.address,
@@ -281,38 +276,24 @@ class AppViewModel(context: Context) : ViewModel() {
             ) {
                 // set state to pending before doing the network connectivity check
                 _networkDeviceUiState.update { currentState ->
-                    currentState.copy(
-                        connectionState = ConnectionState.PENDING,
-                        address = currentState.address,
-                        macAddress = currentState.macAddress
-                    )
+                    currentState.copy(connectionState = ConnectionState.PENDING)
                 }
 
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val inetAddress =
-                            InetAddress.getByName(_networkDeviceUiState.value.address)
+                        val inetAddress = InetAddress.getByName(_networkDeviceUiState.value.address)
                         val connectionState = if (inetAddress.isReachable(500)) {
                             ConnectionState.CONNECTED
                         } else {
                             ConnectionState.DISCONNECTED
                         }
-
                         _networkDeviceUiState.update { currentState ->
-                            currentState.copy(
-                                connectionState = connectionState,
-                                address = currentState.address,
-                                macAddress = currentState.macAddress
-                            )
+                            currentState.copy(connectionState = connectionState)
                         }
                     } catch (e: IOException) {
                         Log.d(TAG, "checkNetworkDeviceConnectivity IO exception")
                         _networkDeviceUiState.update { currentState ->
-                            currentState.copy(
-                                connectionState = ConnectionState.UNKNOWN,
-                                address = currentState.address,
-                                macAddress = currentState.macAddress
-                            )
+                            currentState.copy(connectionState = ConnectionState.UNKNOWN)
                         }
                     }
                 }
@@ -350,6 +331,7 @@ class AppViewModel(context: Context) : ViewModel() {
                             val workRequest = OneTimeWorkRequestBuilder<NetDeviceCheckWorker>()
                                 .addTag("networkDeviceConnectivity")
                                 .setId(workUuid)
+                                .setInitialDelay(30, TimeUnit.SECONDS)
                                 .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
                                 .setInputData(inputData)
                                 .build()

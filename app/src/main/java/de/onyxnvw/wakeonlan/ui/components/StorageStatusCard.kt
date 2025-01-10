@@ -18,6 +18,7 @@ import de.onyxnvw.wakeonlan.data.NetworkDeviceUiState
 fun StorageStatusCard(netDeviceUiState: NetworkDeviceUiState, refresh: () -> Unit) {
     val painter: Painter
     val color: Color
+    val headline: String = stringResource(R.string.connection_network_device_headline)
     val info: List<String> = listOf(
         stringResource(R.string.connection_ip_address, netDeviceUiState.address),
         stringResource(R.string.connection_mac_address, netDeviceUiState.macAddress),
@@ -47,11 +48,12 @@ fun StorageStatusCard(netDeviceUiState: NetworkDeviceUiState, refresh: () -> Uni
     }
     val modifier: Modifier = Modifier
         .fillMaxWidth()
-        .height(128.dp)
+        .height(144.dp)
 
     StatusCard(
         painter,
         color,
+        headline,
         info,
         onClick = { refresh() },
         modifier = modifier

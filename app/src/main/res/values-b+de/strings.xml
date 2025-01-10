@@ -9,6 +9,8 @@
     <string name="wake_up_failure">Ein Fehler ist aufgetreten.</string>
     <string name="wake_up_wifi_disconnected">WLAN ist nicht verbunden.</string>
     <string name="wake_up_subnet_mismatch">Falsches Netzwerk.</string>
+    <string name="connection_wifi_headline">WLAN-Status</string>
+    <string name="connection_network_device_headline">Netzwerkgeräte-Status</string>
     <string name="connection_ip_address">Netzwerkadresse: %1$s</string>
     <string name="connection_broadcast_address">Broadcast-Adresse: %1$s</string>
     <string name="connection_mac_address">Geräteadresse: %1$s</string>
@@ -17,7 +19,7 @@
     <string name="conn_state_pending">suchen...</string>
     <string name="conn_state_disconnected">getrennt</string>
     <string name="conn_state_connected">verbunden</string>
-    <string name="perm_notif_dialog_title">Benachrichtigungsberechtigung</string>
+    <string name="perm_notif_dialog_title">Benach.-berechtigung</string>
     <string name="perm_notif_rationale">Diese App benötigt die Berechtigung zum Senden von Benachrichtigungen, um über Ereignisse zu informieren.</string>
     <string name="perm_notif_confirm">Bestätigen</string>
     <string name="perm_notif_dismiss">Ablehnen</string>
@@ -25,7 +27,7 @@
     <string name="notification_content_text_connected">Netzwerkgerät ist verbunden.</string>
     <string name="notification_content_text_disconnected">Netzwerkgerät ist nicht verfügbar.</string>
     <string name="prefs_network_device_ip_address">IP-Adresse</string>
-    <string name="prefs_network_device_mac_address">MAC Adresse</string>
+    <string name="prefs_network_device_mac_address">MAC-Adresse</string>
     <string name="prefs_network_subnet_mask">Subnetz-Maske</string>
     <string name="prefs_edit_action_title">Gib einen neuen Wert ein:</string>
     <string name="prefs_edit_action_confirm">Speichern</string>

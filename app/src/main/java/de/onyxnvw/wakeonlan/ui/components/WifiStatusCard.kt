@@ -17,28 +17,28 @@ import de.onyxnvw.wakeonlan.data.ConnectionState
 import de.onyxnvw.wakeonlan.data.WifiUiState
 
 @Composable
-fun WifiStatusCard(wifiUiState: WifiUiState) {
+fun WifiStatusCard(wifiUiState: WifiUiState, refresh: () -> Unit) {
     val painter: Painter = if (wifiUiState.connectionState != ConnectionState.DISCONNECTED) {
         painterResource(id = R.drawable.wifi_48px)
     } else {
         painterResource(id = R.drawable.wifi_off_48px)
     }
     val color: Color = colorResource(id = wifiUiState.connectionState.color)
+    val headline: String = stringResource(R.string.connection_wifi_headline)
     val info: List<String> = listOf(
         stringResource(R.string.connection_ip_address, wifiUiState.address),
-        stringResource(R.string.connection_broadcast_address, wifiUiState.broadcastAddress),
         stringResource(R.string.connection_status, stringResource(id = wifiUiState.connectionState.desc))
     )
 
     val modifier: Modifier = Modifier
         .fillMaxWidth()
-        .height(128.dp)
+        .height(144.dp)
 
-    StatusCard(painter, color, info, onClick = {}, modifier = modifier)
+    StatusCard(painter, color, headline, info, onClick = { refresh() }, modifier = modifier)
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun WifiStatusCardPreview() {
-    WifiStatusCard(WifiUiState(ConnectionState.CONNECTED, "192.10.128.30"))
+    WifiStatusCard(WifiUiState(ConnectionState.CONNECTED, "192.10.128.30")) {}
 }

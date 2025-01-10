@@ -39,8 +39,11 @@ class NetworkUtility(context: Context) {
                 Log.d(TAG, "wifiStatus:onCapabilitiesChanged")
                 val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 if (hasWifi) {
-                    val ipAddress = connectivityManager.getLinkProperties(network)!!.linkAddresses[1].address.hostAddress!!
-                    trySend(WifiInfo(ConnectionState.CONNECTED, ipAddress)).isSuccess
+                    val linkProps = connectivityManager.getLinkProperties(network)
+                    if (linkProps != null) {
+                        val ipAddress = linkProps.linkAddresses[1].address.hostAddress
+                        trySend(WifiInfo(ConnectionState.CONNECTED, ipAddress)).isSuccess
+                    }
                 }
                 else {
                     trySend(WifiInfo(ConnectionState.DISCONNECTED, "0.0.0.0")).isSuccess

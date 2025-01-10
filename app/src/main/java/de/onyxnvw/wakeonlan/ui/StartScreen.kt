@@ -35,7 +35,7 @@ fun StartScreen(
                 .fillMaxSize()
             //.padding(innerPadding)
         ) {
-            WifiStatusCard(wifiUiState)
+            WifiStatusCard(wifiUiState, refresh)
             StorageStatusCard(networkDeviceUiState, refresh)
         }
         if (networkDeviceUiState.connectionState == ConnectionState.PENDING) {

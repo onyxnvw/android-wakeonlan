@@ -78,11 +78,11 @@ class MainActivity : ComponentActivity() {
             packageName,
             PackageManager.PackageInfoFlags.of(0)
         )
-        val lifecycleObserver = AppLifecycleObserver(
-            onForeground = { appViewModel.updateActivityState(true) },
-            onBackground = { appViewModel.updateActivityState(false) }
-        )
-        lifecycle.addObserver(lifecycleObserver)
+//        val lifecycleObserver = AppLifecycleObserver(
+//            onForeground = { appViewModel.updateActivityState(true) },
+//            onBackground = { appViewModel.updateActivityState(false) }
+//        )
+//        lifecycle.addObserver(lifecycleObserver)
 
         setContent {
             WakeOnLanTheme {
@@ -97,6 +97,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        appViewModel.checkNetworkDeviceConnectivity()
+        appViewModel.updateActivityState(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        appViewModel.updateActivityState(false)
     }
 }
 

@@ -9,6 +9,8 @@
     <string name="wake_up_failure">An error occurred while sending the wake up message.</string>
     <string name="wake_up_wifi_disconnected">Cannot wake up, WiFi is disconnected.</string>
     <string name="wake_up_subnet_mismatch">Cannot wake up, subnet mismatch.</string>
+    <string name="connection_wifi_headline">WiFi status</string>
+    <string name="connection_network_device_headline">Network device status</string>
     <string name="connection_ip_address">Network address: %1$s</string>
     <string name="connection_broadcast_address">Broadcast address: %1$s</string>
     <string name="connection_mac_address">Hardware address: %1$s</string>
