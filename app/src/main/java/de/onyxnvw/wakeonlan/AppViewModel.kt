@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -217,6 +218,7 @@ class AppViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             Log.d(TAG, "monitorNetDeviceConnectivity launched")
             workManager.getWorkInfosByTagLiveData("networkDeviceConnectivity").asFlow()
+                .distinctUntilChanged()
                 .collectLatest { workInfos ->
                     Log.d(TAG, "monitorNetDeviceConnectivity workInfo updated")
                     var connectionState: ConnectionState = ConnectionState.UNKNOWN
