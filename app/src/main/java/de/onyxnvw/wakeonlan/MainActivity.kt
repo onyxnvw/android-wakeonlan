@@ -205,7 +205,7 @@ fun WakeOnLanApp(
                     modifier = Modifier.padding(horizontal = 32.dp, vertical = 32.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.PowerSettingsNew,
+                        painter = painterResource(R.drawable.mode_off_on_24px),
                         contentDescription = stringResource(R.string.fab_action),
                         modifier = Modifier.size(64.dp)
                     )
@@ -252,7 +252,7 @@ fun sendNetworkDeviceStatusNotification(context: Context, isAvailable: Boolean) 
         NotificationCompat.Builder(context, "de.onyxnvw.wakeonlan.status_notification_channel_id")
             .setContentTitle(context.getString(R.string.notification_content_title))
             .setContentText(contentText)
-            .setSmallIcon(R.drawable.power_settings_new_48px)
+            .setSmallIcon(R.drawable.mode_off_on_24px)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true) // remove notification when clicked
