@@ -11,6 +11,7 @@ import de.onyxnvw.wakeonlan.data.ConnectionState
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.net.Inet4Address
 
 
 data class WifiInfo(val wifiConnState: ConnectionState, val ipv4Address: String)
@@ -40,9 +41,12 @@ class NetworkUtility(context: Context) {
                 val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 if (hasWifi) {
                     val linkProps = connectivityManager.getLinkProperties(network)
-                    if (linkProps != null) {
-                        val ipAddress = linkProps.linkAddresses[1].address.hostAddress
-                        trySend(WifiInfo(ConnectionState.CONNECTED, ipAddress)).isSuccess
+                    linkProps?.linkAddresses?.forEach { linkAddress ->
+                        Log.d(TAG, "wifiStatus:onCapabilitiesChanged ${linkAddress.address.hostAddress}")
+                        if (linkAddress.address is Inet4Address) {
+                            val ipAddress = linkAddress.address.hostAddress ?: "0.0.0.0"
+                            trySend(WifiInfo(ConnectionState.CONNECTED, ipAddress)).isSuccess
+                        }
                     }
                 }
                 else {
