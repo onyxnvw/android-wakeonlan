@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,7 +59,7 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
                 supportingContent = { Text(setting.value) },
                 trailingContent = {
                     Icon(
-                        painter = painterResource(R.drawable.edit_24px),
+                        imageVector = Icons.Outlined.Edit,
                         contentDescription = "Edit",
                         modifier = Modifier
                             .clickable {
@@ -77,7 +80,7 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
             supportingContent = { Text(appVersion) },
             trailingContent = {
                 Icon(
-                    painter = painterResource(R.drawable.info_24px),
+                    imageVector = Icons.Outlined.Info,
                     contentDescription = "Edit",
                     modifier = Modifier
                         .width(64.dp)
@@ -121,7 +124,8 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
                                     showBottomSheet = false
                                 }
                             }
-                        })
+                        }
+                    )
                     Spacer(modifier = Modifier.width(32.dp))
                     Text(
                         stringResource(id = R.string.prefs_edit_action_confirm),
@@ -132,13 +136,12 @@ fun SettingsScreen(viewModel: AppViewModel, appVersion: String) {
                                     showBottomSheet = false
                                 }
                             }
-                        })
+                        }
+                    )
                 }
             }
         }
     }
-
-
 }
 
 //@Preview(
